@@ -35,6 +35,7 @@ pub enum GenerationProvider {
   Pixverse,
   Runway,
   Openrouter,
+  Comfyui,
 }
 
 impl_enum_display_and_debug_using_to_str!(GenerationProvider);
@@ -64,6 +65,7 @@ impl GenerationProvider {
       Self::Pixverse => "pixverse",
       Self::Runway => "runway",
       Self::Openrouter => "openrouter",
+      Self::Comfyui => "comfyui",
     }
   }
 
@@ -84,6 +86,7 @@ impl GenerationProvider {
       "pixverse" => Ok(Self::Pixverse),
       "runway" => Ok(Self::Runway),
       "openrouter" => Ok(Self::Openrouter),
+      "comfyui" => Ok(Self::Comfyui),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -107,6 +110,7 @@ impl GenerationProvider {
       Self::Pixverse,
       Self::Runway,
       Self::Openrouter,
+      Self::Comfyui,
     ])
   }
 }
@@ -137,6 +141,7 @@ mod tests {
       assert_serialization(GenerationProvider::Pixverse, "pixverse");
       assert_serialization(GenerationProvider::Runway, "runway");
       assert_serialization(GenerationProvider::Openrouter, "openrouter");
+      assert_serialization(GenerationProvider::Comfyui, "comfyui");
     }
 
     #[test]
@@ -156,6 +161,7 @@ mod tests {
       assert_eq!(GenerationProvider::Pixverse.to_str(), "pixverse");
       assert_eq!(GenerationProvider::Runway.to_str(), "runway");
       assert_eq!(GenerationProvider::Openrouter.to_str(), "openrouter");
+      assert_eq!(GenerationProvider::Comfyui.to_str(), "comfyui");
     }
 
     #[test]
@@ -175,6 +181,7 @@ mod tests {
       assert_eq!(GenerationProvider::from_str("pixverse").unwrap(), GenerationProvider::Pixverse);
       assert_eq!(GenerationProvider::from_str("runway").unwrap(), GenerationProvider::Runway);
       assert_eq!(GenerationProvider::from_str("openrouter").unwrap(), GenerationProvider::Openrouter);
+      assert_eq!(GenerationProvider::from_str("comfyui").unwrap(), GenerationProvider::Comfyui);
     }
 
     #[test]
@@ -191,7 +198,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = GenerationProvider::all_variants();
-      assert_eq!(variants.len(), 15);
+      assert_eq!(variants.len(), 16);
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
@@ -207,6 +214,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Pixverse));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Runway));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Openrouter));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Comfyui));
       assert_eq!(variants.pop_first(), None);
     }
   }

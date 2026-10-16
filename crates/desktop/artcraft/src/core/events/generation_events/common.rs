@@ -18,6 +18,7 @@ pub enum GenerationServiceProvider {
   Pixverse,
   Runway,
   Openrouter,
+  Comfyui,
 }
 
 #[derive(Debug, Clone, Serialize)]

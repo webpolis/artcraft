@@ -19,5 +19,6 @@ pub fn to_generation_service_provider(provider: GenerationProvider) -> Generatio
     GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
     GenerationProvider::Runway => GenerationServiceProvider::Runway,
     GenerationProvider::Openrouter => GenerationServiceProvider::Openrouter,
+    GenerationProvider::Comfyui => GenerationServiceProvider::Comfyui,
   }
 }

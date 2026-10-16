@@ -6,6 +6,7 @@ use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateErr
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_video::handle_video_artcraft;
 use crate::core::commands::generate::generate_video::grok::handle_grok_video::handle_grok_video;
+use crate::core::commands::generate::comfyui::generate_with_comfyui::generate_with_comfyui;
 use crate::core::commands::generate::generate_video::openrouter::generate_video_openrouter::generate_video_openrouter;
 use crate::core::commands::generate::generate_video::request::{
   TauriGenerateVideoErrorType, TauriGenerateVideoRequest, TauriGenerateVideoResponse,
@@ -38,6 +39,9 @@ pub async fn generate_video_command(request: OmniRequest, app: AppHandle) -> Omn
   }
   if request.provider == Some(GenerationProvider::Openrouter) {
     return generate_video_openrouter(request, &app).await;
+  }
+  if request.provider == Some(GenerationProvider::Comfyui) {
+    return generate_with_comfyui(request, &app).await;
   }
   adapt_legacy_response(generate_video_native(
     decode_native(request)?, app.clone(),

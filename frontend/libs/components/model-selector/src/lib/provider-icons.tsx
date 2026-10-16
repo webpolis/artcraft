@@ -67,6 +67,8 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
       return "Runway";
     case GenerationProvider.Openrouter:
       return "OpenRouter";
+    case GenerationProvider.Comfyui:
+      return "Local (ComfyUI)";
     default:
       return "Unknown Provider";
   }

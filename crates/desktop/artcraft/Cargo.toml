@@ -31,6 +31,7 @@ artcraft_api_defs.workspace = true
 artcraft_client.workspace = true
 artcraft_router.workspace = true
 build_metadata.workspace = true
+comfyui_client.workspace = true
 cookie_store.workspace = true
 enums.workspace = true
 errors.workspace = true

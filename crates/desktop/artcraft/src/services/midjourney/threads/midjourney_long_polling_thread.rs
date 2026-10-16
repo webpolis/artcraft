@@ -193,7 +193,7 @@ mod tests {
     let storyteller_credentials = StorytellerCredentialSet::parse_multi_cookie_header(header.trim())?.ok_or_else(|| anyhow::anyhow!("No ArtCraft backend cookies"))?;
     let storyteller = StorytellerCredentialManager::initialize_empty(&root);
     storyteller.set_credentials(&storyteller_credentials)?;
-    let config = AppEnvConfigs { storyteller_host: ApiHost::Storyteller };
+    let config = AppEnvConfigs { storyteller_host: ApiHost::Storyteller, maybe_comfyui_launcher: None };
     let database = TaskDatabase::connect(&root).await?;
     let session = credentials.session().await?.ok_or_else(|| anyhow::anyhow!("Midjourney login required"))?;
     println!("Midjourney credential loaded and refreshed; source credential unchanged");

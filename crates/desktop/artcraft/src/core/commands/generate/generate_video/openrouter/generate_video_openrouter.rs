@@ -2,24 +2,20 @@
 //! (`google/veo-3.1`) aren't ArtCraft models, so this reads the prompt box's fields directly
 //! instead of decoding the native request. The third-party polling thread finishes the job.
 
-use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
-use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use artcraft_client::utils::api_host::ApiHost;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use log::{error, info, warn};
+use log::{error, info};
 use openrouter_client::error::OpenrouterError;
 use openrouter_client::videos::create_video::{create_video, CreateVideoRequest, FrameImage, FrameType, ImageInput};
 use serde_json::{Map, Value};
 use tauri::{AppHandle, Manager};
 use tokens::tokens::media_files::MediaFileToken;
-use tokens::tokens::prompts::PromptToken;
-use uuid_utils::uuid::generate_random_uuid;
 
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
+use crate::core::commands::generate::common::create_prompt_record::create_prompt_record;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::utils::map_media_files_to_urls::map_media_file_tokens_to_cdn_urls;
 use crate::core::commands::generate::generate_video::openrouter::openrouter_api_key::load_openrouter_api_key;
 use crate::core::commands::generate::generate_video::openrouter::openrouter_values::{openrouter_aspect_ratio, openrouter_resolution};
@@ -50,7 +46,7 @@ pub async fn generate_video_openrouter(request: OmniRequest, app: &AppHandle) ->
   let host = &app.state::<AppEnvConfigs>().storyteller_host;
 
   let body = build_request(&request.fields, host).await?;
-  let maybe_prompt_token = create_prompt_record(&body, host, &creds).await;
+  let maybe_prompt_token = create_prompt_record(host, &creds, &body.prompt, body.generate_audio, body.duration).await;
   let job = create_video(&api_key, &body).await.map_err(openrouter_command_error)?;
   info!("OpenRouter accepted video job {} for {}", job.id, body.model);
 
@@ -103,31 +99,6 @@ async fn build_request(fields: &Map<String, Value>, host: &ApiHost) -> Result<Cr
     frame_images,
     input_references,
   })
-}
-
-/// Saves the prompt so the library shows it beside the video. Fails open.
-async fn create_prompt_record(body: &CreateVideoRequest, host: &ApiHost, creds: &StorytellerCredentialSet) -> Option<PromptToken> {
-  let request = CreatePromptRequest {
-    uuid_idempotency_token: generate_random_uuid(),
-    positive_prompt: Some(body.prompt.clone()),
-    negative_prompt: None,
-    model_type: None,
-    // The ArtCraft server doesn't know OpenRouter as a provider.
-    generation_provider: None,
-    maybe_generation_mode: None,
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
-    maybe_batch_count: None,
-    maybe_generate_audio: body.generate_audio,
-    maybe_duration_seconds: body.duration,
-  };
-  match create_prompt(host, Some(creds), request).await {
-    Ok(response) => Some(response.prompt_token),
-    Err(err) => {
-      warn!("Could not create a prompt record for the OpenRouter video (continuing): {:?}", err);
-      None
-    },
-  }
 }
 
 /// Media tokens point at public ArtCraft CDN files, which OpenRouter's providers can fetch.

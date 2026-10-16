@@ -1,4 +1,5 @@
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
+use crate::core::commands::generate::comfyui::generate_with_comfyui::generate_with_comfyui;
 use crate::core::commands::generate::generate_image::providers::midjourney::handle_midjourney::handle_midjourney;
 use crate::core::commands::generate::omni::{self, Modality, OmniRequest, OmniResult};
 use crate::core::commands::generate::omni::dispatch::{adapt_legacy_response, decode_native};
@@ -26,6 +27,10 @@ use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn generate_image_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  // Before the omni check, which claims every `grok_` model whatever the provider.
+  if request.provider == Some(GenerationProvider::Comfyui) {
+    return generate_with_comfyui(request, &app).await;
+  }
   if request.uses_artcraft() && !request.uses_legacy_image_endpoint() {
     return omni::generate(request, Modality::Image, &app).await;
   }

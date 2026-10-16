@@ -60,8 +60,9 @@ export function useVideoCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
-    // OpenRouter bills its own account; there are no ArtCraft credits to estimate.
-    if (provider === GenerationProvider.Openrouter) {
+    // OpenRouter bills its own account and local models run on the user's GPU; there are no
+    // ArtCraft credits to estimate.
+    if (provider === GenerationProvider.Openrouter || provider === GenerationProvider.Comfyui) {
       setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
       setIsLoading(false);
       return;

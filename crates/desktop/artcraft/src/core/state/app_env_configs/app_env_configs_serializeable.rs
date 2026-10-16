@@ -1,6 +1,7 @@
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use errors::AnyhowResult;
 use serde_derive::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 const CURRENT_VERSION: &str = "1";
 
@@ -18,6 +19,8 @@ pub struct AppEnvConfigsSerializable {
   pub version: Option<String>,
   pub storyteller_port: Option<u32>,
   pub storyteller_host: Option<StorytellerApiHost>,
+  /// Script that starts the local ComfyUI server, e.g. `run.sh` in a ComfyUI checkout.
+  pub comfyui_launcher: Option<PathBuf>,
 }
 
 impl AppEnvConfigsSerializable {

@@ -2,10 +2,13 @@ use crate::core::state::app_env_configs::app_env_configs_serializeable::{AppEnvC
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use errors::AnyhowResult;
 use artcraft_client::utils::api_host::ApiHost;
+use std::path::PathBuf;
 
 #[derive(Clone)]
 pub struct AppEnvConfigs {
   pub storyteller_host: ApiHost,
+  /// Started on demand when a local model is used and ComfyUI isn't running.
+  pub maybe_comfyui_launcher: Option<PathBuf>,
 }
 
 impl AppEnvConfigs {
@@ -32,6 +35,7 @@ impl AppEnvConfigs {
 
     Ok(Self {
       storyteller_host: storyteller_api,
+      maybe_comfyui_launcher: input.and_then(|i| i.comfyui_launcher),
     })
   }
 }

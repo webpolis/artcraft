@@ -50,6 +50,7 @@ impl TaskEnqueueSuccess{
       GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
       GenerationProvider::Runway => GenerationServiceProvider::Runway,
       GenerationProvider::Openrouter => GenerationServiceProvider::Openrouter,
+      GenerationProvider::Comfyui => GenerationServiceProvider::Comfyui,
     }
   }
   

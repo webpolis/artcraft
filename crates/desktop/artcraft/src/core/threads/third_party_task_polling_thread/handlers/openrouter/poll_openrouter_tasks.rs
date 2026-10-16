@@ -1,20 +1,16 @@
-use enums::tauri::tasks::task_status::TaskStatus;
 use log::{error, info, warn};
 use openrouter_client::error::OpenrouterError;
 use openrouter_client::videos::get_video::get_video;
 use openrouter_client::videos::video_job::VideoJobStatus;
 use sqlite_tasks::queries::task::Task;
-use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use tauri::AppHandle;
 
 use crate::core::commands::generate::generate_video::openrouter::openrouter_api_key::load_openrouter_api_key;
-use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
-use crate::core::events::generation_events::generation_failed_event::GenerationFailedEvent;
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::threads::third_party_task_polling_thread::handlers::common::mark_task_failed::mark_task_failed;
 use crate::core::threads::third_party_task_polling_thread::handlers::openrouter::handle_openrouter_complete::handle_openrouter_complete;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
@@ -59,14 +55,14 @@ async fn poll_single_task(
   task: &Task,
 ) -> Result<(), OpenrouterError> {
   let Some(polling_url) = task.queue_status_url.as_deref() else {
-    mark_failed(app_handle, task_database, task, "The OpenRouter job has no polling URL").await;
+    mark_task_failed(app_handle, task_database, task, "The OpenRouter job has no polling URL").await;
     return Ok(());
   };
 
   let job = match get_video(api_key, polling_url).await {
     Ok(job) => job,
     Err(OpenrouterError::Api { status: 404, .. }) => {
-      mark_failed(app_handle, task_database, task, "OpenRouter no longer has this job").await;
+      mark_task_failed(app_handle, task_database, task, "OpenRouter no longer has this job").await;
       return Ok(());
     },
     Err(err) => return Err(err),
@@ -74,7 +70,7 @@ async fn poll_single_task(
 
   match job.status {
     VideoJobStatus::Completed if job.unsigned_urls.is_empty() => {
-      mark_failed(app_handle, task_database, task, "OpenRouter finished the job but returned no video").await;
+      mark_task_failed(app_handle, task_database, task, "OpenRouter finished the job but returned no video").await;
     },
     VideoJobStatus::Completed => {
       info!("[OpenrouterPolling] Task {} completed, saving the video...", task.id.as_str());
@@ -91,7 +87,7 @@ async fn poll_single_task(
     },
     VideoJobStatus::Failed | VideoJobStatus::Cancelled | VideoJobStatus::Expired => {
       let reason = job.error.unwrap_or_else(|| format!("The OpenRouter job ended as {:?}", job.status));
-      mark_failed(app_handle, task_database, task, &reason).await;
+      mark_task_failed(app_handle, task_database, task, &reason).await;
     },
     VideoJobStatus::Pending | VideoJobStatus::InProgress | VideoJobStatus::Unknown => {
       info!("[OpenrouterPolling] Task {} still {:?}", task.id.as_str(), job.status);
@@ -99,30 +95,4 @@ async fn poll_single_task(
   }
 
   Ok(())
-}
-
-async fn mark_failed(
-  app_handle: &AppHandle,
-  task_database: &TaskDatabase,
-  task: &Task,
-  reason: &str,
-) {
-  info!("[OpenrouterPolling] Marking task {} as failed: {}", task.id.as_str(), reason);
-
-  let update_result = update_task_status(UpdateTaskArgs {
-    db: task_database.get_connection(),
-    task_id: &task.id,
-    status: TaskStatus::CompleteFailure,
-  }).await;
-
-  if let Err(err) = update_result {
-    error!("[OpenrouterPolling] Failed to update task status for {}: {:?}", task.id.as_str(), err);
-  }
-
-  GenerationFailedEvent {
-    action: GenerationAction::GenerateVideo,
-    service: GenerationServiceProvider::Openrouter,
-    model: None,
-    reason: Some(reason.to_string()),
-  }.send_infallible(app_handle);
 }

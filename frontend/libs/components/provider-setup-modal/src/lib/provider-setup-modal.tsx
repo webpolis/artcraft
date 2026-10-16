@@ -154,6 +154,8 @@ function getServiceProviderName(provider: GenerationProvider) : string {
       return "Runway";
     case GenerationProvider.Openrouter:
       return "OpenRouter";
+    case GenerationProvider.Comfyui:
+      return "ComfyUI";
     case GenerationProvider.Artcraft:
     default:
       return "Artcraft";

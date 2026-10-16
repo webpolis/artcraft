@@ -2,6 +2,7 @@ use crate::core::providers::credentials::provider_credential_loading_cache::Prov
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::threads::third_party_task_polling_thread::handlers::comfyui::poll_comfyui_tasks::poll_comfyui_tasks;
 use crate::core::threads::third_party_task_polling_thread::handlers::fal::poll_fal_tasks::poll_fal_tasks;
 use crate::core::threads::third_party_task_polling_thread::handlers::openrouter::poll_openrouter_tasks::poll_openrouter_tasks;
 use crate::core::utils::task_database_pending_statuses::TASK_DATABASE_PENDING_STATUSES;
@@ -89,7 +90,11 @@ async fn poll_iteration(
     .filter(|t| t.provider == GenerationProvider::Openrouter)
     .collect();
 
-  for task in tasks.iter().filter(|t| !matches!(t.provider, GenerationProvider::Fal | GenerationProvider::Openrouter)) {
+  let comfyui_tasks: Vec<&Task> = tasks.iter()
+    .filter(|t| t.provider == GenerationProvider::Comfyui)
+    .collect();
+
+  for task in tasks.iter().filter(|t| !matches!(t.provider, GenerationProvider::Fal | GenerationProvider::Openrouter | GenerationProvider::Comfyui)) {
     warn!(
       "[ThirdPartyPolling] Skipping task without a handler here: id={}, provider={:?}, type={:?}",
       task.id.as_str(),
@@ -98,7 +103,7 @@ async fn poll_iteration(
     );
   }
 
-  if fal_tasks.is_empty() && openrouter_tasks.is_empty() {
+  if fal_tasks.is_empty() && openrouter_tasks.is_empty() && comfyui_tasks.is_empty() {
     tokio::time::sleep(SLEEP_THIRD_PARTY_JOBS_SEEN).await;
     return Ok(());
   }
@@ -127,6 +132,17 @@ async fn poll_iteration(
       storyteller_creds_manager,
       credential_cache,
       &openrouter_tasks,
+    ).await;
+  }
+
+  if !comfyui_tasks.is_empty() {
+    poll_comfyui_tasks(
+      app_handle,
+      app_env_configs,
+      app_data_root,
+      task_database,
+      storyteller_creds_manager,
+      &comfyui_tasks,
     ).await;
   }
 

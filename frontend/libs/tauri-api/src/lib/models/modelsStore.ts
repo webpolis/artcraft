@@ -16,12 +16,15 @@ import {
   VIDEO_MODELS,
   ALL_MODELS_LIST,
   buildImageModelsFromListing,
-  buildOpenrouterVideoModels,
+  buildProviderImageModels,
+  buildProviderVideoModels,
   buildVideoModelsFromListing,
 } from "@storyteller/model-list";
+import { GenerationProvider } from "@storyteller/api-enums";
 import { ListImageModels } from "../generate/models/image/ListImageModels.js";
 import { ListVideoModels } from "../generate/models/video/ListVideoModels.js";
 import { ListOpenrouterVideoModels } from "../generate/models/video/ListOpenrouterVideoModels.js";
+import { ListLocalModels } from "../generate/models/ListLocalModels.js";
 
 export interface ModelsStoreState {
   imageModels: ImageModel[];
@@ -42,10 +45,11 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
     console.log("[models] loadModelsFromBackend() — calling Tauri commands…");
     set({ isLoading: true });
 
-    const [imageResult, videoResult, openrouterResult] = await Promise.allSettled([
+    const [imageResult, videoResult, openrouterResult, localResult] = await Promise.allSettled([
       ListImageModels(),
       ListVideoModels(),
       ListOpenrouterVideoModels(),
+      ListLocalModels(),
     ]);
 
     const next: Partial<ModelsStoreState> = { isLoading: false, loaded: true };
@@ -76,13 +80,28 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
       console.error("[models] failed to load video models from backend:", videoResult.reason);
     }
 
-    // OpenRouter models follow ArtCraft's, even when ArtCraft's listing failed.
+    // OpenRouter and local models follow ArtCraft's, even when ArtCraft's listing failed.
     if (openrouterResult.status === "fulfilled") {
-      const openrouterModels = buildOpenrouterVideoModels(openrouterResult.value.payload.models);
+      const openrouterModels = buildProviderVideoModels(openrouterResult.value.payload.models, GenerationProvider.Openrouter);
       next.videoModels = [...(next.videoModels ?? VIDEO_MODELS), ...openrouterModels];
       console.log(`[models] video: ${openrouterModels.length} OpenRouter models added`);
     } else {
       console.error("[models] failed to load OpenRouter video models:", openrouterResult.reason);
+    }
+
+    if (localResult.status === "fulfilled") {
+      const { video_models, image_models } = localResult.value.payload;
+      next.videoModels = [
+        ...(next.videoModels ?? VIDEO_MODELS),
+        ...buildProviderVideoModels(video_models, GenerationProvider.Comfyui),
+      ];
+      next.imageModels = [
+        ...(next.imageModels ?? IMAGE_MODELS),
+        ...buildProviderImageModels(image_models, GenerationProvider.Comfyui),
+      ];
+      console.log(`[models] local: ${video_models.length} video and ${image_models.length} image models added`);
+    } else {
+      console.error("[models] failed to load local models:", localResult.reason);
     }
 
     set(next);

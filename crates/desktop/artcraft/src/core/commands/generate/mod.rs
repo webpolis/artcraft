@@ -1,5 +1,6 @@
 pub mod generate_image;
 pub mod generate_video;
+pub mod comfyui;
 pub mod common;
 pub mod models;
 pub mod omni;

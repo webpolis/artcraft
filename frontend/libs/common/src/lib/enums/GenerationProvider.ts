@@ -14,4 +14,5 @@ export enum GenerationProvider {
   Pixverse = "pixverse",
   Runway = "runway",
   Openrouter = "openrouter",
+  Comfyui = "comfyui",
 }

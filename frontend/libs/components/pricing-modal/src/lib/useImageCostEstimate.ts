@@ -122,6 +122,13 @@ export function useImageCostEstimate(
       (selectedProvider as GenerationProvider | null | undefined) ??
       GenerationProvider.Artcraft;
 
+    // Local models run on the user's own GPU; there are no ArtCraft credits to estimate.
+    if (provider === GenerationProvider.Comfyui) {
+      setEstimatedCreditsForPage(activePage, null);
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setIsLoading(true);
     setEstimatedCreditsForPage(activePage, null);

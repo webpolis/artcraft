@@ -257,7 +257,7 @@ async fn collect_generated_images(
   }]
 }
 
-fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
+pub(crate) fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
   match task_type {
     TaskType::ImageGeneration => GenerationAction::GenerateImage,
     TaskType::VideoGeneration => GenerationAction::GenerateVideo,
@@ -269,7 +269,7 @@ fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
   }
 }
 
-fn provider_to_generation_service(provider: GenerationProvider) -> GenerationServiceProvider {
+pub(crate) fn provider_to_generation_service(provider: GenerationProvider) -> GenerationServiceProvider {
   match provider {
     GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
     GenerationProvider::Fal => GenerationServiceProvider::Fal,
@@ -286,6 +286,7 @@ fn provider_to_generation_service(provider: GenerationProvider) -> GenerationSer
     GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
     GenerationProvider::Runway => GenerationServiceProvider::Runway,
     GenerationProvider::Openrouter => GenerationServiceProvider::Openrouter,
+    GenerationProvider::Comfyui => GenerationServiceProvider::Comfyui,
   }
 }
 

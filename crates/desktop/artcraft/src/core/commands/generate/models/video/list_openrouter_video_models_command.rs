@@ -6,6 +6,7 @@ use openrouter_client::videos::list_video_models::{list_video_models, VideoModel
 use serde_derive::Serialize;
 
 use crate::core::commands::generate::generate_video::openrouter::openrouter_values::{artcraft_aspect_ratio, artcraft_creator};
+use crate::core::commands::generate::models::video::listing_video_model::ListingVideoModel;
 use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 
@@ -14,32 +15,10 @@ const MAX_REFERENCE_IMAGES: u32 = 3;
 
 #[derive(Serialize)]
 pub struct ListOpenrouterVideoModelsResponse {
-  pub models: Vec<OpenrouterListingVideoModel>,
+  pub models: Vec<ListingVideoModel>,
 }
 
 impl SerializeMarker for ListOpenrouterVideoModelsResponse {}
-
-#[derive(Serialize)]
-pub struct OpenrouterListingVideoModel {
-  pub model: String,
-  pub full_name: String,
-  pub model_creator: Option<&'static str>,
-  pub extra_info_short: &'static str,
-  pub text_to_video_supported: bool,
-  pub starting_keyframe_supported: bool,
-  pub ending_keyframe_supported: bool,
-  pub image_references_supported: bool,
-  pub image_references_max: u32,
-  pub show_generate_with_sound_toggle: bool,
-  pub duration_seconds_options: Vec<u32>,
-  pub duration_seconds_default: Option<u32>,
-  /// OpenRouter's own values (`720p`, `4K`); the prompt box maps known ones itself.
-  pub resolution_options: Vec<String>,
-  pub resolution_default: Option<String>,
-  /// ArtCraft `CommonAspectRatio` values.
-  pub aspect_ratio_options: Vec<String>,
-  pub aspect_ratio_default: Option<String>,
-}
 
 #[tauri::command]
 pub async fn list_openrouter_video_models_command() -> ResponseOrErrorMessage<ListOpenrouterVideoModelsResponse> {
@@ -58,7 +37,7 @@ pub async fn list_openrouter_video_models_command() -> ResponseOrErrorMessage<Li
   Ok(ListOpenrouterVideoModelsResponse { models }.into())
 }
 
-fn to_listing_model(model: VideoModelInfo) -> OpenrouterListingVideoModel {
+fn to_listing_model(model: VideoModelInfo) -> ListingVideoModel {
   let frames = model.supported_frame_images.unwrap_or_default();
   let durations = model.supported_durations.unwrap_or_default();
   let resolutions = model.supported_resolutions.unwrap_or_default();
@@ -70,7 +49,7 @@ fn to_listing_model(model: VideoModelInfo) -> OpenrouterListingVideoModel {
   // "Google: Veo 3.1" -> "Veo 3.1"; the picker shows the creator's icon.
   let name = model.name.split_once(": ").map_or(model.name.as_str(), |(_, name)| name);
 
-  OpenrouterListingVideoModel {
+  ListingVideoModel {
     full_name: format!("{} · OpenRouter", name),
     model_creator: artcraft_creator(&model.id),
     extra_info_short: "Billed to your OpenRouter account",

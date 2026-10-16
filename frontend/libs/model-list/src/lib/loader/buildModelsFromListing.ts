@@ -95,14 +95,19 @@ export const buildVideoModelsFromListing = (
   offeredModelIds: string[] = [],
 ): VideoModel[] => build(overlay, listing, offeredModelIds, mergedVideoModel);
 
-// OpenRouter models arrive in listing shape from `list_openrouter_video_models_command`,
-// and only OpenRouter can run them.
-export const buildOpenrouterVideoModels = (
+// Models from providers with their own catalog (OpenRouter, local ComfyUI) arrive in listing
+// shape from their Tauri commands, and only that provider can run them.
+export const buildProviderVideoModels = (
   listing: ListingVideoModel[],
+  provider: GenerationProvider,
 ): VideoModel[] =>
-  listing.map((m) =>
-    mergedVideoModel(m, m.model, undefined, [GenerationProvider.Openrouter]),
-  );
+  listing.map((m) => mergedVideoModel(m, m.model, undefined, [provider]));
+
+export const buildProviderImageModels = (
+  listing: ListingImageModel[],
+  provider: GenerationProvider,
+): ImageModel[] =>
+  listing.map((m) => mergedImageModel(m, m.model, undefined, [provider]));
 
 // ── Core assembly ──────────────────────────────────────────────────────────
 
@@ -176,6 +181,7 @@ const mergedImageModel = (
   m: ListingImageModel,
   tauriId: string,
   o: ImageModel | undefined,
+  providers?: GenerationProvider[],
 ): ImageModel => {
   const aspectRatios = m.aspect_ratio_options ?? [];
   const resolutions = m.resolution_options ?? [];
@@ -205,9 +211,9 @@ const mergedImageModel = (
     canEditAngles: o?.canEditAngles ?? false,
 
     // Desktop-native provider knowledge.
-    providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
+    providers: providers ?? (["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
       ? [GenerationProvider.Artcraft, GenerationProvider.Midjourney]
-      : o?.getProviders(),
+      : o?.getProviders()),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.

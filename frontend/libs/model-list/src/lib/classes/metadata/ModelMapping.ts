@@ -218,6 +218,7 @@ export const getProviderDisplayName = (provider: string): string => {
     sora: "Sora",
     worldlabs: "World Labs",
     openrouter: "OpenRouter",
+    comfyui: "Local (ComfyUI)",
   };
 
   return displayNames[provider] || provider;

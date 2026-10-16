@@ -1,1 +1,2 @@
+pub mod create_prompt_record;
 pub mod router_video_request_to_artcraft_prompt;

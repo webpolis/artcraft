@@ -15,6 +15,8 @@ use crate::core::commands::cost_estimate::estimate_image_cost_command::estimate_
 use crate::core::commands::cost_estimate::estimate_splat_cost_command::estimate_splat_cost_command;
 use crate::core::commands::cost_estimate::estimate_video_cost_command::estimate_video_cost_command;
 use crate::core::commands::generate::models::image::list_image_models_command::list_image_models_command;
+use crate::core::commands::generate::comfyui::comfyui_launcher::stop_started_comfyui;
+use crate::core::commands::generate::models::list_local_models_command::list_local_models_command;
 use crate::core::commands::generate::models::video::list_openrouter_video_models_command::list_openrouter_video_models_command;
 use crate::core::commands::generate::models::video::list_video_models_command::list_video_models_command;
 use crate::core::commands::download::download_directory_reveal_command::download_directory_reveal_command;
@@ -242,6 +244,7 @@ pub fn run() {
     list_image_models_command,
     list_video_models_command,
     list_openrouter_video_models_command,
+    list_local_models_command,
     flip_image,
     generate_image_command,
     generate_video_command,
@@ -292,6 +295,11 @@ pub fn run() {
     worldlabs_receive_bearer_command,
   ]);
 
-  builder.run(tauri::generate_context!("tauri.conf.json"))
-    .expect("error while running tauri application");
+  builder.build(tauri::generate_context!("tauri.conf.json"))
+    .expect("error while building tauri application")
+    .run(|_app, event| {
+      if let tauri::RunEvent::Exit = event {
+        stop_started_comfyui();
+      }
+    });
 }
