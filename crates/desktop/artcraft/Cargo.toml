@@ -43,6 +43,7 @@ memory_store.workspace = true
 midjourney_client.workspace = true
 mimetypes.workspace = true
 openai_sora_client.workspace = true
+openrouter_client.workspace = true
 primitives.workspace = true
 sqlite_tasks.workspace = true
 tokens.workspace = true

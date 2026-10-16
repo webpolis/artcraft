@@ -95,6 +95,15 @@ export const buildVideoModelsFromListing = (
   offeredModelIds: string[] = [],
 ): VideoModel[] => build(overlay, listing, offeredModelIds, mergedVideoModel);
 
+// OpenRouter models arrive in listing shape from `list_openrouter_video_models_command`,
+// and only OpenRouter can run them.
+export const buildOpenrouterVideoModels = (
+  listing: ListingVideoModel[],
+): VideoModel[] =>
+  listing.map((m) =>
+    mergedVideoModel(m, m.model, undefined, [GenerationProvider.Openrouter]),
+  );
+
 // ── Core assembly ──────────────────────────────────────────────────────────
 
 // Membership: a model appears in the picker when it is
@@ -231,6 +240,7 @@ const mergedVideoModel = (
   m: ListingVideoModel,
   tauriId: string,
   o: VideoModel | undefined,
+  providers?: GenerationProvider[],
 ): VideoModel => {
   const aspectRatios = m.aspect_ratio_options ?? [];
   const fullName = m.full_name ?? o?.fullName ?? m.model;
@@ -254,7 +264,7 @@ const mergedVideoModel = (
     supportsSystemPrompt: o?.supportsSystemPrompt,
 
     // Desktop-native provider knowledge.
-    providers: o?.getProviders(),
+    providers: providers ?? o?.getProviders(),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.

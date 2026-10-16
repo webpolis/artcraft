@@ -65,6 +65,8 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
       return "PixVerse";
     case GenerationProvider.Runway:
       return "Runway";
+    case GenerationProvider.Openrouter:
+      return "OpenRouter";
     default:
       return "Unknown Provider";
   }

@@ -3,16 +3,22 @@
   "include": [],
   "references": [
     {
-      "path": "../../common"
+      "path": "../../tauri-events"
     },
     {
-      "path": "../../tauri-events"
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../input"
     },
     {
       "path": "../button"
     },
     {
       "path": "../modal"
+    },
+    {
+      "path": "../../common"
     },
     {
       "path": "./tsconfig.lib.json"

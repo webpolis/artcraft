@@ -129,7 +129,7 @@ fn api_message(body: &str) -> String {
   serde_json::from_str::<Value>(body).ok().and_then(|value| value.get("error_message").or_else(|| value.get("message")).and_then(Value::as_str).map(str::to_owned)).unwrap_or_else(|| body.to_owned())
 }
 
-fn command_error(status: CommandErrorStatus, kind: &str, message: String) -> CommandErrorResponseWrapper<String, ()> {
+pub fn command_error(status: CommandErrorStatus, kind: &str, message: String) -> CommandErrorResponseWrapper<String, ()> {
   CommandErrorResponseWrapper { status, error_type: Some(kind.into()), error_message: Some(message), error_details: None }
 }
 

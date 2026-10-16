@@ -2,6 +2,8 @@ import { Modal } from "@storyteller/ui-modal";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowRightIcon, WandSparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
+import { SetOpenrouterApiKey } from "@storyteller/tauri-api";
 import { useState } from "react";
 import { useShowProviderLoginModalEvent } from "@storyteller/tauri-events";
 import { GenerationProvider } from "@storyteller/common";
@@ -13,6 +15,8 @@ export function ProviderSetupModal({
 }: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
+  const [apiKey, setApiKey] = useState("");
+  const needsApiKey = provider === GenerationProvider.Openrouter;
 
   useShowProviderLoginModalEvent(async (event) => {
     // Retained native handlers can still emit these events for old tasks.
@@ -37,6 +41,9 @@ export function ProviderSetupModal({
     case GenerationProvider.Grok:
       modalDescription = `You can add your ${serviceProviderName} account to ArtCraft by simply logging in. Use can then use it directly within Artcraft. You can add all of your AI accounts to Artcraft to use them all in one place and build the ultimate AI art tool.`;
       break;
+    case GenerationProvider.Openrouter:
+      modalDescription = `Paste your ${serviceProviderName} API key to generate videos with your own ${serviceProviderName} account. ${serviceProviderName} bills each video, and ArtCraft saves the results to your library.`;
+      break;
     default:
       modalDescription = `You can add your ${serviceProviderName} account to ArtCraft by simply logging in. Use your credits and account directly within Artcraft. You can add all of your AI accounts to Artcraft to use them all in one place and build the ultimate AI art tool.`;
       break;
@@ -54,6 +61,15 @@ export function ProviderSetupModal({
         break;
       case GenerationProvider.Fal:
         break; // TODO: None yet.
+      case GenerationProvider.Openrouter:
+        try {
+          await SetOpenrouterApiKey(apiKey);
+        } catch (e) {
+          console.error("Error saving OpenRouter API key", e);
+          return;
+        }
+        setApiKey("");
+        break;
       default:
         break;
     }
@@ -87,10 +103,20 @@ export function ProviderSetupModal({
           </p>
         </div>
 
+        {needsApiKey && (
+          <Input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={`Paste your ${serviceProviderName} API key`}
+          />
+        )}
+
         <Button
           className="h-10 px-4"
           icon={ArrowRightIcon}
           iconFlip={true}
+          disabled={needsApiKey && !apiKey.trim()}
           onClick={() => {
             buttonOnClick();
           }}
@@ -126,6 +152,8 @@ function getServiceProviderName(provider: GenerationProvider) : string {
       return "PixVerse";
     case GenerationProvider.Runway:
       return "Runway";
+    case GenerationProvider.Openrouter:
+      return "OpenRouter";
     case GenerationProvider.Artcraft:
     default:
       return "Artcraft";

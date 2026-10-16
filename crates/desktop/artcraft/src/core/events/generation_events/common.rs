@@ -17,6 +17,7 @@ pub enum GenerationServiceProvider {
   Picsart,
   Pixverse,
   Runway,
+  Openrouter,
 }
 
 #[derive(Debug, Clone, Serialize)]

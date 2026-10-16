@@ -13,6 +13,8 @@ const MODEL_ID_PREFIX_FAMILIES: Array<[string, string]> = [
   ["minimax", "MiniMax"],
   ["hailuo", "MiniMax"],
   ["happy_horse", "Happy Horse"],
+  ["happyhorse", "Happy Horse"],
+  ["heygen", "HeyGen"],
   ["wan", "Wan"],
   ["vidu", "Vidu"],
   // ── Image ── (flux also covers the Flux 3 video model)
@@ -86,7 +88,8 @@ export function getModelFamilyName(
   creator?: ModelCreator,
 ): string | undefined {
   if (modelId) {
-    const normalized = modelId.toLowerCase();
+    // OpenRouter ids carry an organization prefix: "google/veo-3.1".
+    const normalized = modelId.toLowerCase().replace(/^[^/]+\//, "");
     for (const [prefix, family] of MODEL_ID_PREFIX_FAMILIES) {
       if (normalized.startsWith(prefix)) return family;
     }

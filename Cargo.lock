@@ -401,6 +401,7 @@ dependencies = [
  "mimetypes",
  "once_cell",
  "openai_sora_client",
+ "openrouter_client",
  "os_info",
  "primitives",
  "rand 0.9.2",
@@ -5836,6 +5837,18 @@ dependencies = [
  "uuid_utils",
  "wreq",
  "wreq-util",
+]
+
+[[package]]
+name = "openrouter_client"
+version = "0.0.1"
+dependencies = [
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

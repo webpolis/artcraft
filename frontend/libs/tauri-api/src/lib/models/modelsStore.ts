@@ -16,10 +16,12 @@ import {
   VIDEO_MODELS,
   ALL_MODELS_LIST,
   buildImageModelsFromListing,
+  buildOpenrouterVideoModels,
   buildVideoModelsFromListing,
 } from "@storyteller/model-list";
 import { ListImageModels } from "../generate/models/image/ListImageModels.js";
 import { ListVideoModels } from "../generate/models/video/ListVideoModels.js";
+import { ListOpenrouterVideoModels } from "../generate/models/video/ListOpenrouterVideoModels.js";
 
 export interface ModelsStoreState {
   imageModels: ImageModel[];
@@ -40,9 +42,10 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
     console.log("[models] loadModelsFromBackend() — calling Tauri commands…");
     set({ isLoading: true });
 
-    const [imageResult, videoResult] = await Promise.allSettled([
+    const [imageResult, videoResult, openrouterResult] = await Promise.allSettled([
       ListImageModels(),
       ListVideoModels(),
+      ListOpenrouterVideoModels(),
     ]);
 
     const next: Partial<ModelsStoreState> = { isLoading: false, loaded: true };
@@ -71,6 +74,15 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
       );
     } else {
       console.error("[models] failed to load video models from backend:", videoResult.reason);
+    }
+
+    // OpenRouter models follow ArtCraft's, even when ArtCraft's listing failed.
+    if (openrouterResult.status === "fulfilled") {
+      const openrouterModels = buildOpenrouterVideoModels(openrouterResult.value.payload.models);
+      next.videoModels = [...(next.videoModels ?? VIDEO_MODELS), ...openrouterModels];
+      console.log(`[models] video: ${openrouterModels.length} OpenRouter models added`);
+    } else {
+      console.error("[models] failed to load OpenRouter video models:", openrouterResult.reason);
     }
 
     set(next);
