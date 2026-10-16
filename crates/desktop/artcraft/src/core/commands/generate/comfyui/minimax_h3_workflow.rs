@@ -11,6 +11,11 @@ pub const DEFAULT_DURATION: u32 = 5;
 pub const RESOLUTIONS: [&str; 2] = ["480p", "720p"];
 pub const ASPECT_RATIOS: [&str; 3] = ["wide_sixteen_by_nine", "tall_nine_by_sixteen", "square"];
 
+/// At 720p the sampler's activations need most of the 12 GB card, so only 2 GB of weights stay on
+/// it (the bundled workflow keeps 6 GB, which is faster at 480p). The rest goes to the second GPU
+/// and RAM.
+const WEIGHT_PLACEMENT_720P: &str = "cuda:0,2gb;cuda:1,4.5gb;cpu,*";
+
 pub struct MinimaxH3Input<'a> {
   pub prompt: &'a str,
   /// ArtCraft `CommonAspectRatio` value.
@@ -27,7 +32,11 @@ pub struct MinimaxH3Input<'a> {
 
 pub fn build_workflow(input: &MinimaxH3Input) -> Value {
   let mut workflow: Value = serde_json::from_str(WORKFLOW).expect("bundled H3 workflow is valid JSON");
-  let (width, height) = dimensions(input.aspect_ratio, input.resolution);
+  let is_720p = matches!(input.resolution, Some("seven_twenty_p" | "720p"));
+  let (width, height) = dimensions(input.aspect_ratio, is_720p);
+  if is_720p {
+    workflow["1"]["inputs"]["expert_mode_allocations"] = json!(WEIGHT_PLACEMENT_720P);
+  }
   let video = &mut workflow["6"]["inputs"];
   video["prompt"] = json!(input.prompt);
   video["width"] = json!(width);
@@ -50,8 +59,7 @@ pub fn build_workflow(input: &MinimaxH3Input) -> Value {
 }
 
 /// Sizes divisible by 32, as the model requires: 0.4 megapixels at 480p, 0.9 at 720p.
-fn dimensions(aspect_ratio: Option<&str>, resolution: Option<&str>) -> (u32, u32) {
-  let is_720p = matches!(resolution, Some("seven_twenty_p" | "720p"));
+fn dimensions(aspect_ratio: Option<&str>, is_720p: bool) -> (u32, u32) {
   match (aspect_ratio.unwrap_or(ASPECT_RATIOS[0]), is_720p) {
     ("tall_nine_by_sixteen", false) => (480, 864),
     ("square", false) => (640, 640),
@@ -94,6 +102,7 @@ mod tests {
     let video = &workflow["6"]["inputs"];
     assert_eq!(video["prompt"], "a red panda on a mossy log");
     assert_eq!((video["width"].as_u64(), video["height"].as_u64()), (Some(704), Some(1280)));
+    assert_eq!(workflow["1"]["inputs"]["expert_mode_allocations"], WEIGHT_PLACEMENT_720P);
     assert_eq!(video["length"], 192);
     assert_eq!(workflow["7"]["inputs"]["noise_seed"], 7);
     assert!(video.get("first_frame").is_none());
@@ -116,6 +125,7 @@ mod tests {
     assert_eq!(workflow["6"]["inputs"]["first_frame"], json!(["20", 0]));
     assert_eq!(workflow["6"]["inputs"]["last_frame"], json!(["21", 0]));
     assert_eq!((workflow["6"]["inputs"]["width"].as_u64(), workflow["6"]["inputs"]["length"].as_u64()), (Some(864), Some(124)));
+    assert_eq!(workflow["1"]["inputs"]["expert_mode_allocations"], "cuda:0,6gb;cuda:1,4.5gb;cpu,*");
     assert!(workflow.get("13").is_none());
     assert!(workflow["14"]["inputs"].get("audio").is_none());
   }
