@@ -3,6 +3,7 @@ use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::upload_video_media_file_from_file::{
   upload_video_media_file_from_file, UploadVideoFromFileArgs,
 };
+use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use log::{error, info, warn};
 use openrouter_client::videos::download_video::download_video;
@@ -79,8 +80,9 @@ async fn handle_openrouter_complete_inner(
     maybe_creds: Some(&creds),
     path: &download_path,
     maybe_prompt_token: maybe_prompt_token.as_ref(),
-    // The ArtCraft server doesn't know OpenRouter as a provider.
-    maybe_generation_provider: None,
+    // Without a provider the server files this as a user upload, which My Library hides.
+    // The server doesn't know OpenRouter, so name the app that generated it.
+    maybe_generation_provider: Some(GenerationProvider::Artcraft),
   }).await;
   if let Err(err) = std::fs::remove_file(&download_path) {
     warn!("[OpenrouterComplete] Could not remove {:?}: {}", download_path, err);
